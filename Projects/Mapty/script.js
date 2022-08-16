@@ -17,9 +17,7 @@ if (navigator.geolocation)
     function (position) {
       const { latitude } = position.coords;
       const { longitude } = position.coords;
-      console.log(latitude, longitude);
-
-      const coords = [latitude, longitude];
+      console.log(`https://www.google.pt/maps/@${latitude},${longitude}`);
 
       const map = L.map('map').setView(coords, 13);
 
@@ -37,3 +35,4 @@ if (navigator.geolocation)
       alert('Could not get your position');
     }
   );
+
