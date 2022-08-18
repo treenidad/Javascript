@@ -6,6 +6,8 @@ class Workout {
   clicks = 0;
 
   constructor(coords, distance, duration) {
+    // this.date = ...
+    // this.id = ...
     this.coords = coords; // [lat, lng]
     this.distance = distance; // in km
     this.duration = duration; // in min
@@ -27,6 +29,7 @@ class Workout {
 
 class Running extends Workout {
   type = 'running';
+
   constructor(coords, distance, duration, cadence) {
     super(coords, distance, duration);
     this.cadence = cadence;
@@ -40,12 +43,14 @@ class Running extends Workout {
     return this.pace;
   }
 }
+
 class Cycling extends Workout {
   type = 'cycling';
 
   constructor(coords, distance, duration, elevationGain) {
     super(coords, distance, duration);
     this.elevationGain = elevationGain;
+    // this.type = 'cycling';
     this.calcSpeed();
     this._setDescription();
   }
@@ -61,7 +66,7 @@ class Cycling extends Workout {
 // const cycling1 = new Cycling([39, -12], 27, 95, 523);
 // console.log(run1, cycling1);
 
-///////////////////////////////////////////////////////////////
+///////////////////////////////////////
 // APPLICATION ARCHITECTURE
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
@@ -91,7 +96,6 @@ class App {
   }
 
   _getPosition() {
-    // Using the Geolocation API
     if (navigator.geolocation)
       navigator.geolocation.getCurrentPosition(
         this._loadMap.bind(this),
@@ -101,22 +105,21 @@ class App {
       );
   }
 
-  // Loads the map for the application.
   _loadMap(position) {
     const { latitude } = position.coords;
     const { longitude } = position.coords;
-    console.log(latitude, longitude);
+    // console.log(`https://www.google.pt/maps/@${latitude},${longitude}`);
 
     const coords = [latitude, longitude];
 
     this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.#map);
 
-    // Handles clicks on map
+    // Handling clicks on map
     this.#map.on('click', this._showForm.bind(this));
 
     this.#workouts.forEach(work => {
@@ -124,7 +127,6 @@ class App {
     });
   }
 
-  // Handles the form.
   _showForm(mapE) {
     this.#mapEvent = mapE;
     form.classList.remove('hidden');
@@ -133,28 +135,22 @@ class App {
 
   _hideForm() {
     // Empty inputs
-    inputDistance.value =
-      inputDuration.value =
-      inputCadence.value =
-      inputElevation.value =
-        '';
+    inputDistance.value = inputDuration.value = inputCadence.value = inputElevation.value =
+      '';
 
     form.style.display = 'none';
     form.classList.add('hidden');
     setTimeout(() => (form.style.display = 'grid'), 1000);
   }
 
-  // Handles the elevation field.
   _toggleElevationField() {
     inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
     inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
   }
 
-  // Handles the new Workout field.
   _newWorkout(e) {
     const validInputs = (...inputs) =>
       inputs.every(inp => Number.isFinite(inp));
-
     const allPositive = (...inputs) => inputs.every(inp => inp > 0);
 
     e.preventDefault();
@@ -166,9 +162,10 @@ class App {
     const { lat, lng } = this.#mapEvent.latlng;
     let workout;
 
-    // If workout running, create a running object
+    // If workout running, create running object
     if (type === 'running') {
       const cadence = +inputCadence.value;
+
       // Check if data is valid
       if (
         // !Number.isFinite(distance) ||
@@ -182,16 +179,16 @@ class App {
       workout = new Running([lat, lng], distance, duration, cadence);
     }
 
-    // If workout cycling, create a cycling object
+    // If workout cycling, create cycling object
     if (type === 'cycling') {
       const elevation = +inputElevation.value;
 
       if (
         !validInputs(distance, duration, elevation) ||
         !allPositive(distance, duration)
-      ) {
+      )
         return alert('Inputs have to be positive numbers!');
-      }
+
       workout = new Cycling([lat, lng], distance, duration, elevation);
     }
 
@@ -228,6 +225,7 @@ class App {
       )
       .openPopup();
   }
+
   _renderWorkout(workout) {
     let html = `
       <li class="workout workout--${workout.type}" data-id="${workout.id}">
@@ -239,7 +237,7 @@ class App {
           <span class="workout__value">${workout.distance}</span>
           <span class="workout__unit">km</span>
         </div>
-          <div class="workout__details">
+        <div class="workout__details">
           <span class="workout__icon">⏱</span>
           <span class="workout__value">${workout.duration}</span>
           <span class="workout__unit">min</span>
@@ -273,13 +271,16 @@ class App {
           <span class="workout__value">${workout.elevationGain}</span>
           <span class="workout__unit">m</span>
         </div>
-      </li> -->
+      </li>
       `;
 
     form.insertAdjacentHTML('afterend', html);
   }
 
   _moveToPopup(e) {
+    // BUGFIX: When we click on a workout before the map has loaded, we get an error. But there is an easy fix:
+    if (!this.#map) return;
+
     const workoutEl = e.target.closest('.workout');
 
     if (!workoutEl) return;
@@ -295,16 +296,16 @@ class App {
       },
     });
 
-    // Using the public interface
+    // using the public interface
     // workout.click();
   }
 
-  // Simple API - not recommended for large amounts of data
-  // Local Storage API provided by the browser
   _setLocalStorage() {
     localStorage.setItem('workouts', JSON.stringify(this.#workouts));
   }
 
+  // Simple API - not recommended for large amounts of data
+  // Local Storage API provided by the browser
   _getLocalStorage() {
     const data = JSON.parse(localStorage.getItem('workouts'));
 
